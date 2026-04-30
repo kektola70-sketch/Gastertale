@@ -7,75 +7,131 @@
             color: white;
             font-family: 'Courier New', Courier, monospace;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
             overflow: hidden;
+            cursor: none; /* Скрываем курсор для атмосферы, либо оставим */
         }
-        #terminal {
-            width: 80%;
+
+        #chara-sprite {
+            width: 60px;
+            height: 100px;
+            background: #ff0000; /* Временный красный прямоугольник вместо спрайта */
+            margin-bottom: 30px;
+            border: 2px solid white;
+        }
+
+        .question {
+            font-size: 24px;
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 100px;
+        }
+
+        .btn {
+            background: none;
+            border: 2px solid white;
+            color: white;
+            padding: 10px 30px;
             font-size: 20px;
+            cursor: pointer;
+            transition: 0.2s;
         }
-        .glitch {
-            animation: glitch-anim 0.2s infinite;
-            color: #ff0000;
+
+        .btn:hover {
+            background: white;
+            color: black;
         }
-        @keyframes glitch-anim {
-            0% { transform: translate(0); }
-            20% { transform: translate(-5px, 5px); }
-            40% { transform: translate(-5px, -5px); }
-            60% { transform: translate(5px, 5px); }
-            80% { transform: translate(5px, -5px); }
-            100% { transform: translate(0); }
-        }
-        .gaster-text {
+
+        /* Эффект Гастера */
+        .gaster-scare {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            color: black;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 50px;
             font-weight: bold;
-            color: #ddd;
-            text-shadow: 2px 2px #555;
+            z-index: 100;
+        }
+
+        .glitch-overlay {
+            position: absolute;
+            top:0; left:0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1), rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2px);
+            pointer-events: none;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div id="terminal">
-        <div id="text"></div>
+
+    <div id="game-content">
+        <div id="chara-sprite"></div>
+        <div class="question">ХОЧЕШЬ ВОССТАНОВИТЬ МИР?</div>
+        
+        <div class="buttons">
+            <button class="btn" onclick="restoreWorld()">ДА</button>
+            <button class="btn" onclick="closeGame()">НЕТ</button>
+        </div>
     </div>
 
+    <!-- Экран Гастера -->
+    <div id="gaster-screen" class="gaster-scare">
+        ☠︎ 🕈︎ 👎︎ 💧︎ ❄︎ ☜︎ ☼︎
+    </div>
+    <div id="glitch" class="glitch-overlay"></div>
+
     <script>
-        const textElement = document.getElementById('text');
-        const lines = [
-            "Chara: Мир был стерт.",
-            "Chara: Мы должны были идти дальше...",
-            "Chara: Но... что это?",
-            "SYSTEM: [ВНИМАНИЕ: ОБНАРУЖЕНА ПЕРЕЗАПИСЬ ДАННЫХ]",
-            "SYSTEM: [ОБЪЕКТ: W.D. GASTER ВЕРНУЛСЯ В ПОТОК]",
-            "???: Entry number 17...",
-            "???: DARKER, YET DARKER."
-        ];
+        const { ipcRenderer } = require('electron');
 
-        let currentLine = 0;
-
-        function typeLine() {
-            if (currentLine < lines.length) {
-                let div = document.createElement('div');
-                let text = lines[currentLine];
-                
-                // Эффекты для системных строк
-                if (text.includes("SYSTEM")) {
-                    div.className = "glitch";
-                } else if (text.includes("???")) {
-                    div.className = "gaster-text";
-                    document.body.style.filter = "invert(1)"; // Резкий инвертированный эффект
-                }
-
-                div.innerText = text;
-                textElement.appendChild(div);
-                currentLine++;
-                setTimeout(typeLine, 2000); // Задержка между строками
-            }
+        function closeGame() {
+            ipcRenderer.send('close-app');
         }
 
-        typeLine();
+        function restoreWorld() {
+            // Скрываем кнопки
+            document.querySelector('.buttons').style.visibility = 'hidden';
+            document.querySelector('.question').innerText = "...";
+
+            // Через 3 секунды появляется Гастер
+            setTimeout(() => {
+                const gaster = document.getElementById('gaster-screen');
+                const glitch = document.getElementById('glitch');
+                
+                document.getElementById('game-content').style.display = 'none';
+                gaster.style.display = 'flex';
+                glitch.style.display = 'block';
+
+                // Можно добавить звук помех здесь
+                console.log("Гастер перехватил управление.");
+                
+                // Эффект дрожания
+                setInterval(() => {
+                    gaster.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
+                }, 50);
+
+            }, 3000);
+        }
+
+        // Инструкция для F11
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'F11') {
+                console.log("Полноэкранный режим");
+            }
+        });
     </script>
 </body>
 </html>
