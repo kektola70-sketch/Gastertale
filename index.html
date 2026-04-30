@@ -2,10 +2,15 @@
 <html>
 <head>
     <style>
+        @font-face {
+            font-family: 'Determination';
+            src: url('https://db.onlinewebfonts.com/t/623f99092496d669b91024346850d995.ttf');
+        }
+
         body {
             background: black;
             color: white;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Determination', 'Courier New', monospace;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -13,123 +18,151 @@
             height: 100vh;
             margin: 0;
             overflow: hidden;
-            cursor: none; /* Скрываем курсор для атмосферы, либо оставим */
+            image-rendering: pixelated;
         }
 
-        #chara-sprite {
-            width: 60px;
+        /* Реалистичная Чара на CSS (пиксель-арт) */
+        #chara {
+            width: 54px;
+            height: 90px;
+            position: relative;
+            margin-bottom: 40px;
+            background: url('https://www.spriters-resource.com/resources/sheets/71/74223.png') -4px -655px; /* Точный спрайт Чары из ресурсов игры */
+            width: 36px;
+            height: 56px;
+            transform: scale(3);
+            image-rendering: pixelated;
+        }
+
+        .dialogue-box {
             height: 100px;
-            background: #ff0000; /* Временный красный прямоугольник вместо спрайта */
-            margin-bottom: 30px;
-            border: 2px solid white;
-        }
-
-        .question {
-            font-size: 24px;
-            margin-bottom: 50px;
             text-align: center;
+            font-size: 24px;
+            max-width: 600px;
+            line-height: 1.5;
         }
 
         .buttons {
             display: flex;
-            gap: 100px;
+            gap: 80px;
+            margin-top: 20px;
         }
 
         .btn {
             background: none;
-            border: 2px solid white;
+            border: none;
             color: white;
-            padding: 10px 30px;
-            font-size: 20px;
+            font-family: 'Determination', sans-serif;
+            font-size: 28px;
             cursor: pointer;
-            transition: 0.2s;
+            outline: none;
         }
 
         .btn:hover {
-            background: white;
-            color: black;
+            color: yellow;
+        }
+
+        .btn:hover::before {
+            content: '❤';
+            margin-right: 10px;
+            color: red;
         }
 
         /* Эффект Гастера */
-        .gaster-scare {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        #gaster-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
             background: white;
-            color: black;
             display: none;
+            z-index: 1000;
             justify-content: center;
             align-items: center;
-            font-size: 50px;
-            font-weight: bold;
-            z-index: 100;
+            color: black;
+            font-size: 80px;
         }
 
-        .glitch-overlay {
-            position: absolute;
-            top:0; left:0; width: 100%; height: 100%;
-            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1), rgba(0,0,0,0.1) 1px, transparent 1px, transparent 2px);
-            pointer-events: none;
-            display: none;
+        .glitch-text {
+            animation: shake 0.1s infinite;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(2px, 2px); }
+            50% { transform: translate(-2px, -2px); }
+            100% { transform: translate(0); }
         }
     </style>
 </head>
 <body>
 
-    <div id="game-content">
-        <div id="chara-sprite"></div>
-        <div class="question">ХОЧЕШЬ ВОССТАНОВИТЬ МИР?</div>
-        
-        <div class="buttons">
-            <button class="btn" onclick="restoreWorld()">ДА</button>
-            <button class="btn" onclick="closeGame()">НЕТ</button>
-        </div>
+    <div id="chara"></div>
+    <div id="text-box" class="dialogue-box">ХОЧЕШЬ ВОССТАНОВИТЬ МИР?</div>
+    
+    <div id="ui" class="buttons">
+        <button class="btn" onclick="startSequence()">ДА</button>
+        <button class="btn" onclick="exitGame()">НЕТ</button>
     </div>
 
-    <!-- Экран Гастера -->
-    <div id="gaster-screen" class="gaster-scare">
-        ☠︎ 🕈︎ 👎︎ 💧︎ ❄︎ ☜︎ ☼︎
+    <div id="gaster-overlay">
+        <div class="glitch-text">💧︎🏱︎☜︎✌︎😐︎☜︎☼︎</div>
     </div>
-    <div id="glitch" class="glitch-overlay"></div>
 
     <script>
         const { ipcRenderer } = require('electron');
+        const textBox = document.getElementById('text-box');
+        const ui = document.getElementById('ui');
+        const gaster = document.getElementById('gaster-overlay');
+        const chara = document.getElementById('chara');
 
-        function closeGame() {
+        function exitGame() {
             ipcRenderer.send('close-app');
         }
 
-        function restoreWorld() {
-            // Скрываем кнопки
-            document.querySelector('.buttons').style.visibility = 'hidden';
-            document.querySelector('.question').innerText = "...";
+        function typeWriter(text, i = 0) {
+            if (i < text.length) {
+                textBox.innerHTML = text.substring(0, i + 1);
+                setTimeout(() => typeWriter(text, i + 1), 50);
+            }
+        }
+
+        function startSequence() {
+            ui.style.display = 'none';
+            textBox.innerHTML = "...";
 
             // Через 3 секунды появляется Гастер
             setTimeout(() => {
-                const gaster = document.getElementById('gaster-screen');
-                const glitch = document.getElementById('glitch');
-                
-                document.getElementById('game-content').style.display = 'none';
+                // Вспышка Гастера
                 gaster.style.display = 'flex';
-                glitch.style.display = 'block';
-
-                // Можно добавить звук помех здесь
-                console.log("Гастер перехватил управление.");
                 
-                // Эффект дрожания
-                setInterval(() => {
-                    gaster.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
-                }, 50);
+                setTimeout(() => {
+                    gaster.style.display = 'none';
+                    applyWorldChange();
+                }, 1000); // Гастер висит 1 секунду
 
             }, 3000);
         }
 
-        // Инструкция для F11
+        function applyWorldChange() {
+            // Изменяем мир
+            document.body.style.filter = "grayscale(100%) contrast(1.2)";
+            chara.style.filter = "hue-rotate(180deg) brightness(0.5)"; // Чара выглядит "битой"
+            
+            // Чара говорит новые слова
+            setTimeout(() => {
+                typeWriter("Что-то пошло не так...");
+                setTimeout(() => {
+                    typeWriter("Данные были перезаписаны.");
+                    setTimeout(() => {
+                        typeWriter("Мир... он частично поменялся.");
+                    }, 3000);
+                }, 3000);
+            }, 1000);
+        }
+
+        // F11 Полноэкранный режим
         window.addEventListener('keydown', (e) => {
             if (e.key === 'F11') {
-                console.log("Полноэкранный режим");
+                // Electron сам обработает это, если не запрещено в main.js
             }
         });
     </script>
