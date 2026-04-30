@@ -1,0 +1,12 @@
+{
+  "name": "gastertale",
+  "version": "1.0.0",
+  "description": "Gastertale - Corrupted World",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^latest"
+  }
+}
